@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from app.models.schemas import UserContext, Persona, Language, DestinationIntent
+from app.models.schemas import DestinationIntent, Language, Persona, UserContext
 
 
 def test_valid_minimal_payload(base_payload):

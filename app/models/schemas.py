@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 from typing import Annotated
+
 from pydantic import BaseModel, Field, field_validator
 
 

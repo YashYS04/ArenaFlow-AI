@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import pytest
+
 from app.models.schemas import (
     AccessibilityMode,
-    AccessibilityNeed,
-    DestinationIntent,
-    Persona,
     UserContext,
 )
 from app.services.context_engine import RouteNotFound, build_decision, run_assist
@@ -17,7 +15,7 @@ def test_build_decision_standard_fan(base_payload):
     stadium = get_stadium()
     ctx = UserContext(**base_payload)
     decision = build_decision(ctx, stadium)
-    
+
     assert decision.language == "en"
     assert decision.accessibility_mode == AccessibilityMode.standard
     assert decision.landmark_based is False
@@ -66,7 +64,7 @@ def test_build_decision_imminent_kickoff_urgency(base_payload):
 
 def test_build_decision_seat_resolution(base_payload):
     stadium = get_stadium()
-    
+
     # Lower bowl seat section
     payload1 = dict(base_payload, destination_intent="seat", ticket_section="134")
     ctx1 = UserContext(**payload1)
@@ -94,7 +92,7 @@ def test_build_decision_unreachable_gate_due_to_blocks(base_payload):
     stadium = get_stadium()
     from app.services.incidents import get_incident_manager
     manager = get_incident_manager()
-    
+
     # Block gates and concourses around lower concourse
     manager.report_incident("concourse_lower_sw", "spill", "spill details")
     manager.report_incident("concourse_lower_nw", "maintenance", "blocked stairs")
@@ -139,7 +137,7 @@ def test_build_decision_unreachable_restroom_due_to_blocks(base_payload):
     stadium = get_stadium()
     from app.services.incidents import get_incident_manager
     manager = get_incident_manager()
-    
+
     # Block SW concourse completely
     manager.report_incident("concourse_lower_sw", "spill", "spill details")
     manager.report_incident("concourse_lower_nw", "maintenance", "blocked stairs")

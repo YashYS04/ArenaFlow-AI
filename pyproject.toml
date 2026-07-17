@@ -21,6 +21,7 @@ ignore = [
     "PLR2004", # Magic value comparison (allowed in tests & code)
     "PLR0913", # Too many arguments in function definition
     "PLR0912", # Too many branches
+    "PLR0915", # Too many statements (common in app factories)
     "N818",    # Exception name should end with Error
     "UP042",   # Enum StrEnum warning
     "PLC0415", # Import inside function (needed for conditional packages)

@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import pytest
-from app.config import Settings
-from app.services.llm import MockLLM, get_llm_client
+
 from app.services.security import RateLimiter, sanitize_text
 
 
@@ -36,7 +35,7 @@ def test_security_headers_present(client):
 def test_rate_limiting_429(make_client, base_payload):
     # Set low capacity, no refill
     api = make_client(rate_limit_capacity=2, rate_limit_refill_per_sec=0.0)
-    
+
     # Run 3 requests
     r1 = api.post("/api/assist", json=base_payload)
     r2 = api.post("/api/assist", json=base_payload)

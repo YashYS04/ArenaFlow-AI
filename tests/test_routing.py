@@ -32,7 +32,7 @@ def test_find_path_step_free_only():
     # concourse_lower_sw -> concourse_upper_w has a non-step-free connection (stairs, distance 50)
     # The step-free route must go via concourse_lower_ne elevator instead:
     # lower_sw -> lower_nw -> lower_ne -> upper_e -> seating_upper -> upper_w (60 + 60 + 55 + 35 + 30 = 240)
-    
+
     standard_path = find_path(stadium, "concourse_lower_sw", "concourse_upper_w", step_free_only=False)
     assert standard_path is not None
     assert path_distance(standard_path) == 50
@@ -48,7 +48,7 @@ def test_find_path_blocked_zones():
     stadium = get_stadium()
     # Route: concourse_lower_sw -> concourse_lower_se -> concourse_lower_ne (60 + 60 = 120)
     # If concourse_lower_se is blocked, route must go: lower_sw -> lower_nw -> lower_ne (60 + 60 = 120)
-    
+
     path_blocked = find_path(stadium, "concourse_lower_sw", "concourse_lower_ne", blocked_zones={"concourse_lower_se"})
     assert path_blocked is not None
     assert path_distance(path_blocked) == 120
@@ -57,9 +57,9 @@ def test_find_path_blocked_zones():
     # To make it unreachable, we must block all exit edges from concourse_lower_sw:
     # lower_se, lower_nw, seating_lower, upper_w
     path_unreachable = find_path(
-        stadium, 
-        "concourse_lower_sw", 
-        "concourse_lower_ne", 
+        stadium,
+        "concourse_lower_sw",
+        "concourse_lower_ne",
         blocked_zones={"concourse_lower_se", "concourse_lower_nw", "concourse_upper_w", "seating_lower"}
     )
     assert path_unreachable is None
@@ -76,7 +76,7 @@ def test_find_path_crowd_congestion_weighting():
     # Route: concourse_lower_sw -> concourse_lower_se (distance 60)
     # vs alternative route: lower_sw -> lower_nw -> lower_ne -> lower_se (60 + 60 + 60 = 180)
     # If lower_se is 'high' crowd, its path cost multiplier is 3.0.
-    
+
     crowd_levels = {"concourse_lower_se": "high"}
     path = find_path(stadium, "concourse_lower_sw", "concourse_lower_ne", crowd_levels=crowd_levels)
     assert path is not None

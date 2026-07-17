@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import pytest
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from app.config import Settings
-from app.services.llm import MockLLM, get_llm_client, GeminiClient
+from app.services.llm import GeminiClient, MockLLM, get_llm_client
 from app.services.phrasing import PhrasingContext
 
 
@@ -66,7 +67,7 @@ async def test_gemini_client_phrase_success(mock_model_class, mock_configure, ph
 
     settings = Settings(gemini_api_key="test_key")
     client = GeminiClient(settings)
-    
+
     ans = await client.phrase(phrasing_ctx, "What's the route?")
     assert ans == "Answer from Gemini"
 
@@ -92,7 +93,7 @@ async def test_gemini_client_phrase_failure_fallback(mock_model_class, mock_conf
 @patch("google.generativeai.GenerativeModel")
 async def test_gemini_client_stream_success(mock_model_class, mock_configure, phrasing_ctx):
     mock_model = MagicMock()
-    
+
     async def mock_generate_content_async(*args, **kwargs):
         async def async_generator():
             chunk1 = MagicMock()
@@ -102,7 +103,7 @@ async def test_gemini_client_stream_success(mock_model_class, mock_configure, ph
             chunk2.text = " 1"
             yield chunk2
         return async_generator()
-        
+
     mock_model.generate_content_async.side_effect = mock_generate_content_async
     mock_model_class.return_value = mock_model
 

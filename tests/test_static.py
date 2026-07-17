@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 import app
 
 _HTML = (Path(app.__file__).resolve().parent / "static" / "index.html").read_text(encoding="utf-8")

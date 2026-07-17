@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+
 from app.models.schemas import (
     AccessibilityMode,
     AccessibilityNeed,
@@ -46,11 +47,32 @@ _HURRY_INTENTS = {DestinationIntent.gate, DestinationIntent.seat}
 
 
 class RouteNotFound(Exception):
+    """Exception raised when no path can be computed between stadium zones.
+
+    This usually happens due to step-free requirements isolating zones,
+    or active spill/maintenance incidents blocking concourse connections.
+    """
     pass
 
 
 @dataclass
 class DecisionResult:
+    """Carries the outputs of the deterministic rules engine.
+
+    Attributes:
+        facility: The chosen facility destination.
+        route_steps: Ordered list of path edge instructions.
+        crowd_level: Crowd congestion index at destination.
+        language: ISO code of resolved output language.
+        accessibility_mode: Screen reader, captioned, or standard mode.
+        landmark_based: True if directions should utilize landmark text references.
+        hurry: True if match kickoff is imminent and speed is prioritized.
+        alternatives_note: Optional warning warning if destination was swapped due to crowd.
+        urgency: Localized urgency alert text if kickoff is close.
+        incident_id: Tracking ID of any logged incident.
+        incident_type: Category of any logged incident.
+        incident_desc: Description of any logged incident.
+    """
     facility: FacilityInfo
     route_steps: list[RouteStep]
     crowd_level: CrowdLevel
@@ -66,6 +88,15 @@ class DecisionResult:
 
 
 def _to_facility_info(facility: Facility, language: str) -> FacilityInfo:
+    """Format database Facility record into schema FacilityInfo with localization.
+
+    Args:
+        facility: Database facility instance.
+        language: Target language code.
+
+    Returns:
+        FacilityInfo: Structured API response model.
+    """
     return FacilityInfo(
         id=facility.id,
         name=localized(facility.names, language) or facility.id,
@@ -77,6 +108,15 @@ def _to_facility_info(facility: Facility, language: str) -> FacilityInfo:
 
 
 def _resolve_seat(ctx: UserContext, stadium: Stadium) -> Facility:
+    """Locate the target seating zone facility based on the ticket section code.
+
+    Args:
+        ctx: Current user query context.
+        stadium: The stadium database instance.
+
+    Returns:
+        Facility: The resolved seating zone facility.
+    """
     section = (ctx.ticket_section or "").strip()
     upper = bool(section) and section[0] in {"2", "3", "4"}
     target_id = "seat_upper" if upper else "seat_lower"
@@ -96,6 +136,22 @@ def _candidates_with_routes(
     blocked_zones: set[str],
     crowd_levels: dict[str, str],
 ) -> list[tuple[Facility, list[Edge], int]]:
+    """Scan facilities matching target types and check if there's a valid path.
+
+    Filters candidates by accessibility and returns them sorted by distance.
+
+    Args:
+        ctx: User query context.
+        stadium: Stadium database.
+        types: Set of target facility categories to scan.
+        accessible_only: True if only wheelchair-accessible targets should be scanned.
+        step_free: True if Dijkstra should restrict path edges to step-free.
+        blocked_zones: Active hazard zones to avoid.
+        crowd_levels: Crowd multiplier values.
+
+    Returns:
+        list[tuple[Facility, list[Edge], int]]: List of tuples of (facility, path, distance).
+    """
     results: list[tuple[Facility, list[Edge], int]] = []
     for facility in stadium.facilities_of_types(types, accessible_only=accessible_only):
         path = find_path(
@@ -117,6 +173,18 @@ def _candidates_with_routes(
 def _build_route_steps(
     stadium: Stadium, start: str, path: list[Edge], facility: Facility, language: str
 ) -> list[RouteStep]:
+    """Compile a list of edge objects into structured, localized RouteStep models.
+
+    Args:
+        stadium: Stadium database.
+        start: Starting zone ID.
+        path: Dijkstra edges output.
+        facility: The target facility.
+        language: Language code.
+
+    Returns:
+        list[RouteStep]: Sequential route navigation steps.
+    """
     steps: list[RouteStep] = []
     facility_name = localized(facility.names, language) or facility.id
     node = start
@@ -147,6 +215,18 @@ def _build_route_steps(
 
 
 def build_decision(ctx: UserContext, stadium: Stadium) -> DecisionResult:
+    """Execute the deterministic rules engine to resolve navigation goals and paths.
+
+    Calculates accessibility constraints, evaluates time-based crowd congestion,
+    applies hazard blocks, logs staff incidents, and swaps overcrowded amenities.
+
+    Args:
+        ctx: The validated UserContext payload.
+        stadium: The stadium layout database.
+
+    Returns:
+        DecisionResult: Fully resolved navigation goals, paths, and metadata.
+    """
     needs = set(ctx.accessibility_needs)
     wheelchair = AccessibilityNeed.wheelchair in needs
     visual = AccessibilityNeed.visual in needs
@@ -247,6 +327,20 @@ def _maybe_swap_for_crowd(
     blocked_zones: set[str],
     crowd_levels: dict[str, str],
 ) -> tuple[Facility, list[Edge], str | None]:
+    """Check if the closest facility is highly crowded and swap to a quieter nearby alternative.
+
+    Args:
+        ctx: User context query.
+        stadium: Stadium database.
+        facility: The initially selected closest facility.
+        path: Path to the initially selected facility.
+        candidates: List of other valid candidate facilities.
+        blocked_zones: Active blocked zones.
+        crowd_levels: Current crowd levels.
+
+    Returns:
+        tuple[Facility, list[Edge], Optional[str]]: Swapped facility, route path, and warning note.
+    """
     if ctx.destination_intent not in _SWAP_ELIGIBLE:
         return facility, path, None
 
@@ -273,6 +367,21 @@ def _maybe_swap_for_crowd(
 
 
 async def run_assist(ctx: UserContext, stadium: Stadium, llm: LLMClient) -> AssistResponse:
+    """Orchestrate the smart assistant pipeline.
+
+    1. Resolves Dijkstra routing & operational stats using build_decision.
+    2. Builds the PhrasingContext data block.
+    3. Triggers the Gemini LLM if a free-text question is present,
+       otherwise short-circuits instantly to the offline template generator.
+
+    Args:
+        ctx: The validated UserContext.
+        stadium: The stadium layout database.
+        llm: The configured Gemini LLM client.
+
+    Returns:
+        AssistResponse: Structured API response model containing routing and phrasing text.
+    """
     decision = build_decision(ctx, stadium)
 
     phrasing_ctx = PhrasingContext(

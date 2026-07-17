@@ -31,3 +31,5 @@ Thumbs.db
 
 # Reference repo (do not commit)
 reference-stadium/
+
+.vercel

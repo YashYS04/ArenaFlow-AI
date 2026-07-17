@@ -115,14 +115,39 @@ _STAFF_ANSWER: dict[str, dict[str, str]] = {
 
 
 def _lang(language: str) -> str:
+    """Normalize language code to supported set, defaulting to English.
+
+    Args:
+        language: Input language code (e.g. 'es').
+
+    Returns:
+        str: Supported language code.
+    """
     return language if language in _MEANS else _DEFAULT_LANG
 
 
 def _cap(text: str) -> str:
+    """Capitalize only the first letter of the string (leaving other case as-is).
+
+    Args:
+        text: Input string.
+
+    Returns:
+        str: Capitalized string.
+    """
     return text[:1].upper() + text[1:] if text else text
 
 
 def type_label(facility_type: str, language: str) -> str:
+    """Get the localized label name for a facility category.
+
+    Args:
+        facility_type: The type string (e.g., 'restroom').
+        language: Target language code.
+
+    Returns:
+        str: Localized label name.
+    """
     lang = _lang(language)
     return _TYPE_LABEL[lang].get(facility_type, facility_type.replace("_", " "))
 
@@ -136,6 +161,19 @@ def step_instruction(
     facility_name: str,
     language: str,
 ) -> str:
+    """Build a localized, formatted step instruction for routing directions.
+
+    Args:
+        means: The mode of transit (e.g., 'elevator').
+        to_name: The destination zone name.
+        landmark: The landmark direction hint for the zone, if any.
+        is_final: True if this is the final step in the path.
+        facility_name: The target facility name.
+        language: Target language code.
+
+    Returns:
+        str: Formatted instruction sentence.
+    """
     lang = _lang(language)
     verb = _cap(_MEANS[lang].get(means, _MEANS[lang]["walk"]))
     lm = f" ({landmark})" if (is_final and landmark) else ""
@@ -144,16 +182,54 @@ def step_instruction(
 
 
 def alternatives_note(facility_type: str, language: str) -> str:
+    """Generate a localized warning explaining that a congested option was bypassed.
+
+    Args:
+        facility_type: Bypassed facility category.
+        language: Target language code.
+
+    Returns:
+        str: Alert sentence.
+    """
     lang = _lang(language)
     return _ALT_NOTE[lang].format(label=type_label(facility_type, lang))
 
 
 def urgency_note(language: str) -> str:
+    """Get the localized pre-kickoff urgency warning.
+
+    Args:
+        language: Target language code.
+
+    Returns:
+        str: Warning message.
+    """
     return _URGENCY[_lang(language)]
 
 
 @dataclass(frozen=True)
 class PhrasingContext:
+    """Dataclass holding resolved navigation stats and incident states.
+
+    Used by phrasing engines to render localized natural-language sentences.
+
+    Attributes:
+        language: Language code ('en'/'es'/'fr').
+        facility_name: Name of target facility.
+        facility_type: Category type of target facility.
+        facility_landmark: Optional landmark hint text.
+        crowd_level: Resolved crowd index ('low'/'medium'/'high').
+        accessibility_mode: Mode code ('standard'/'screen_reader'/'captioned').
+        landmark_based: True if landmark hints are active.
+        hurry: True if kickoff is imminent.
+        alternative_type: Optional bypassed facility type.
+        total_distance: Total distance in meters.
+        step_count: Number of edges in computed route.
+        persona: User persona ('fan' or 'staff').
+        incident_id: Tracking ID of logged incident.
+        incident_type: Incident hazard category.
+        incident_desc: Staff-logged descriptive text.
+    """
     language: str
     facility_name: str
     facility_type: str
@@ -173,6 +249,17 @@ class PhrasingContext:
 
 @lru_cache(maxsize=256)
 def render_answer(ctx: PhrasingContext) -> str:
+    """Grounded offline text generation that matches the PhrasingContext details.
+
+    Used to short-circuit simple wayfinding calls (saving LLM token billing)
+    and to serve as the baseline template context for LLM rephrasing prompts.
+
+    Args:
+        ctx: Resolved context fields.
+
+    Returns:
+        str: Formatted paragraphs of instructions.
+    """
     lang = _lang(ctx.language)
 
     if ctx.persona == "staff" and ctx.incident_id:

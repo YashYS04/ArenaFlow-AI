@@ -1,7 +1,28 @@
 from __future__ import annotations
 
 import heapq
+
 from app.services.stadium_data import Edge, Stadium
+
+
+def _get_weight_multiplier(zone: str, crowd_levels: dict[str, str] | None) -> float:
+    """Calculate the dynamic edge cost weight multiplier based on the zone's crowd level.
+
+    Args:
+        zone: The target zone ID.
+        crowd_levels: Map of zone IDs to their active crowd levels ("low"/"medium"/"high").
+
+    Returns:
+        float: Multiplier (1.0 for low/none, 1.5 for medium, 3.0 for high).
+    """
+    if not crowd_levels:
+        return 1.0
+    crowd = crowd_levels.get(zone, "low")
+    if crowd == "medium":
+        return 1.5
+    if crowd == "high":
+        return 3.0
+    return 1.0
 
 
 def find_path(
@@ -13,10 +34,21 @@ def find_path(
     blocked_zones: set[str] | None = None,
     crowd_levels: dict[str, str] | None = None,
 ) -> list[Edge] | None:
-    """Return the list of edges from start to goal.
+    """Compute the shortest path between start and goal zones using Dijkstra's algorithm.
 
-    Returns an empty list when start == goal, and None when no route
-    exists under the given constraints.
+    This pathfinder filters traversal based on step-free requirements and avoids
+    blocked hazard zones. Node traversal costs are dynamically scaled by crowd congestion.
+
+    Args:
+        stadium: The stadium layout database.
+        start: The starting zone ID.
+        goal: The destination zone ID.
+        step_free_only: If True, restricts traversal to ramps, elevators, and walkways.
+        blocked_zones: Set of zone IDs that are blocked due to hazards/spills.
+        crowd_levels: Active crowd level map for dynamic weight adjustments.
+
+    Returns:
+        Optional[list[Edge]]: List of edges forming the shortest path, or None if unreachable.
     """
     if start == goal:
         return []
@@ -51,13 +83,7 @@ def find_path(
                 continue
 
             # Calculate dynamic weight multiplier based on crowd level
-            weight_multiplier = 1.0
-            if crowd_levels:
-                crowd = crowd_levels.get(edge.to, "low")
-                if crowd == "medium":
-                    weight_multiplier = 1.5
-                elif crowd == "high":
-                    weight_multiplier = 3.0
+            weight_multiplier = _get_weight_multiplier(edge.to, crowd_levels)
 
             edge_cost = int(edge.distance * weight_multiplier)
             new_cost = cost + edge_cost
@@ -71,6 +97,15 @@ def find_path(
 
 
 def _reconstruct(came_from: dict[str, tuple[str, Edge]], goal: str) -> list[Edge]:
+    """Rebuild the sequence of edges traversed from start to goal.
+
+    Args:
+        came_from: Map of node ID to its predecessor node ID and traversed edge.
+        goal: Target destination zone ID.
+
+    Returns:
+        list[Edge]: Sequential list of edges from start to goal.
+    """
     path: list[Edge] = []
     node = goal
     while node in came_from:
@@ -82,4 +117,12 @@ def _reconstruct(came_from: dict[str, tuple[str, Edge]], goal: str) -> list[Edge
 
 
 def path_distance(path: list[Edge]) -> int:
+    """Sum up the total traversal distance for a given path sequence.
+
+    Args:
+        path: A sequence of edges representing the route.
+
+    Returns:
+        int: Cumulative distance in meters.
+    """
     return sum(edge.distance for edge in path)

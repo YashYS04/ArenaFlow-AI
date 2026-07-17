@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 
 def test_health_endpoint(client):
     res = client.get("/health")
@@ -42,7 +40,7 @@ def test_assist_stream_endpoint_no_question(client, base_payload):
     res = client.post("/api/assist/stream", json=base_payload)
     assert res.status_code == 200
     assert "text/event-stream" in res.headers["content-type"]
-    
+
     # Read response text
     body = res.text
     assert "event: result" in body
@@ -81,7 +79,7 @@ def test_incidents_api_endpoints(client):
         "incident_report": "Heavy crowd congestion",
         "reported_issue_type": "congestion"
     }
-    
+
     res_report = client.post("/api/assist", json=staff_payload)
     assert res_report.status_code == 200
     inc_id = res_report.json()["incident_action_logged"]

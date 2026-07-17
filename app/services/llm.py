@@ -23,28 +23,70 @@ _SYSTEM_PROMPT = (
 
 
 class LLMClient(ABC):
+    """Abstract interface defining the GenAI language rephrasing provider.
+
+    Exposes async unary phrasing and async token streaming interfaces.
+    """
     is_live: bool = False
 
     @abstractmethod
     async def phrase(self, ctx: PhrasingContext, question: str) -> str:
-        """Return a localized answer grounded in ctx."""
+        """Return a localized, friendly answer grounded in verified facts.
+
+        Args:
+            ctx: Pre-resolved navigation/dispatch facts.
+            question: Free-text question asked by user.
+
+        Returns:
+            str: Natural language phrased answer.
+        """
         raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
     async def phrase_stream(self, ctx: PhrasingContext, question: str) -> AsyncIterator[str]:
-        """Stream a localized answer grounded in ctx."""
+        """Stream a localized, friendly answer grounded in verified facts.
+
+        Args:
+            ctx: Pre-resolved navigation/dispatch facts.
+            question: Free-text question asked by user.
+
+        Yields:
+            str: Chunks of phrased text.
+        """
         if False:  # pragma: no cover
             yield ""
         raise NotImplementedError  # pragma: no cover
 
 
 class MockLLM(LLMClient):
+    """Offline mock phrasing client that generates static templates.
+
+    Avoids billing/network calls for standard queries or when no API key exists.
+    """
     is_live = False
 
     async def phrase(self, ctx: PhrasingContext, question: str) -> str:
+        """Return localized templates instantly.
+
+        Args:
+            ctx: Pre-resolved query context.
+            question: Ignored free-text input.
+
+        Returns:
+            str: Rendered template text.
+        """
         return render_answer(ctx)
 
     async def phrase_stream(self, ctx: PhrasingContext, question: str) -> AsyncIterator[str]:
+        """Stream localized templates word-by-word with a small delay.
+
+        Args:
+            ctx: Pre-resolved context.
+            question: Ignored free-text.
+
+        Yields:
+            str: Word chunks with spacing.
+        """
         full_text = render_answer(ctx)
         # Yield the text in chunks of words with a small delay
         words = full_text.split(" ")
@@ -54,9 +96,18 @@ class MockLLM(LLMClient):
 
 
 class GeminiClient(LLMClient):
+    """Live Google Gemini API wayfinding phrasing client.
+
+    Uses google-generativeai to phrase grounded answers.
+    """
     is_live = True
 
     def __init__(self, settings: Settings) -> None:
+        """Configure the Gemini client.
+
+        Args:
+            settings: Current application settings.
+        """
         import google.generativeai as genai
 
         genai.configure(api_key=settings.gemini_api_key)  # type: ignore[attr-defined]
@@ -67,6 +118,14 @@ class GeminiClient(LLMClient):
         }
 
     def _build_facts(self, ctx: PhrasingContext) -> str:
+        """Format the resolved route facts into a structured context for the LLM.
+
+        Args:
+            ctx: Current phrasing context.
+
+        Returns:
+            str: Structured key-value details string.
+        """
         incident_part = ""
         if ctx.persona == "staff" and ctx.incident_id:
             incident_part = (
@@ -88,6 +147,15 @@ class GeminiClient(LLMClient):
         )
 
     async def phrase(self, ctx: PhrasingContext, question: str) -> str:
+        """Call the Gemini API to phrase an answer grounded in the facts.
+
+        Args:
+            ctx: Phrase context parameters.
+            question: Free-text question.
+
+        Returns:
+            str: Natural language phrased answer.
+        """
         prompt = (
             _SYSTEM_PROMPT.format(language=ctx.language)
             + "\n\nVERIFIED_FACTS:\n"
@@ -110,6 +178,15 @@ class GeminiClient(LLMClient):
             return render_answer(ctx)
 
     async def phrase_stream(self, ctx: PhrasingContext, question: str) -> AsyncIterator[str]:
+        """Stream a Gemini API response chunk-by-chunk.
+
+        Args:
+            ctx: Phrase context.
+            question: User question text.
+
+        Yields:
+            str: Next token/chunk.
+        """
         prompt = (
             _SYSTEM_PROMPT.format(language=ctx.language)
             + "\n\nVERIFIED_FACTS:\n"
@@ -138,6 +215,14 @@ class GeminiClient(LLMClient):
 
 
 def get_llm_client(settings: Settings) -> LLMClient:
+    """Factory creating the appropriate LLMClient based on active settings.
+
+    Args:
+        settings: Active settings.
+
+    Returns:
+        LLMClient: GeminiClient if key exists, otherwise MockLLM.
+    """
     if not settings.gemini_enabled:
         logger.info("GEMINI_API_KEY not configured — using offline MockLLM.")
         return MockLLM()

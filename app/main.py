@@ -42,6 +42,14 @@ _SECURITY_HEADERS = {
 
 
 def _stadium_metadata(stadium: Stadium) -> dict[str, Any]:
+    """Compile static lists of stadium zones, facilities, and layout details for the UI.
+
+    Args:
+        stadium: The active Stadium data instance.
+
+    Returns:
+        dict[str, Any]: Dictionary containing stadium zones, facilities, intents, and language options.
+    """
     return {
         "stadium": {
             "name": stadium.name,
@@ -71,6 +79,11 @@ def _stadium_metadata(stadium: Stadium) -> dict[str, Any]:
 
 
 def _rate_limit_dependency(request: Request) -> None:
+    """Dependency validator that throttles client IPs using a token-bucket RateLimiter.
+
+    Args:
+        request: The incoming FastAPI HTTP request.
+    """
     limiter: RateLimiter = request.app.state.rate_limiter
     client_ip = request.client.host if request.client else "unknown"
     allowed, retry_after = limiter.check(client_ip)
@@ -83,6 +96,14 @@ def _rate_limit_dependency(request: Request) -> None:
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
+    """Initialize the FastAPI application, mount CORS, static files, and security handlers.
+
+    Args:
+        settings: Optional Settings overrides (used during test client overrides).
+
+    Returns:
+        FastAPI: Configured FastAPI application instance.
+    """
     settings = settings or get_settings()
 
     app = FastAPI(
@@ -108,6 +129,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.middleware("http")
     async def add_security_headers(request: Request, call_next: Any) -> Any:
+        """Append secure HTTP headers (CSP, XSS, Frame headers) to every response.
+
+        Args:
+            request: The incoming Request.
+            call_next: Next request processing middleware handler.
+
+        Returns:
+            Any: The updated Response object with security headers appended.
+        """
         response = await call_next(request)
         for header, value in _SECURITY_HEADERS.items():
             response.headers.setdefault(header, value)
@@ -115,14 +145,36 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.exception_handler(RouteNotFound)
     async def _route_not_found_handler(request: Request, exc: RouteNotFound) -> JSONResponse:
+        """Global handler translating RouteNotFound exceptions to 404 responses.
+
+        Args:
+            request: The Request.
+            exc: The raised RouteNotFound exception.
+
+        Returns:
+            JSONResponse: Localized error message response.
+        """
         return JSONResponse(status_code=404, content={"detail": str(exc)})
 
     @app.get("/health", response_model=HealthResponse, tags=["system"])
     async def health() -> HealthResponse:
+        """Check system deployment status.
+
+        Returns:
+            HealthResponse: Aliveness confirmation object.
+        """
         return HealthResponse(status="ok")
 
     @app.get("/api/stadium", tags=["data"])
     async def stadium_metadata(request: Request) -> dict[str, Any]:
+        """Fetch general stadium layout zones and facility records.
+
+        Args:
+            request: The Request object.
+
+        Returns:
+            dict[str, Any]: Stadium metadata package.
+        """
         return _stadium_metadata(request.app.state.stadium)
 
     @app.post(
@@ -132,6 +184,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         tags=["assist"],
     )
     async def assist(ctx: UserContext, request: Request) -> AssistResponse:
+        """Unified endpoint for fans/staff wayfinding query resolution.
+
+        Args:
+            ctx: Valided UserContext parameters.
+            request: The request context.
+
+        Returns:
+            AssistResponse: Grounded pathing and localized rephrasing text.
+        """
         stadium: Stadium = request.app.state.stadium
         llm = request.app.state.llm
         response = await run_assist(ctx, stadium, llm)
@@ -151,6 +212,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         tags=["assist"],
     )
     async def assist_stream(ctx: UserContext, request: Request) -> StreamingResponse:
+        """Stream wayfinding text response token-by-token using Server-Sent Events (SSE).
+
+        Args:
+            ctx: Validated UserContext payload.
+            request: The Request.
+
+        Returns:
+            StreamingResponse: Real-time event stream.
+        """
         stadium: Stadium = request.app.state.stadium
         llm = request.app.state.llm
 
@@ -234,6 +304,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/api/incidents", tags=["incidents"])
     async def list_incidents() -> list[dict[str, Any]]:
+        """Fetch all logged incidents in the stadium for the staff dispatch dashboard.
+
+        Returns:
+            list[dict[str, Any]]: List of incident packages.
+        """
         return [
             {
                 "id": inc.id,
@@ -247,6 +322,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.post("/api/incidents/{incident_id}/resolve", tags=["incidents"])
     async def resolve_incident(incident_id: str) -> dict[str, str]:
+        """Mark an incident as resolved to clear its routing blocks.
+
+        Args:
+            incident_id: Alphanumeric incident identifier.
+
+        Returns:
+            dict[str, str]: Resolution status dictionary.
+        """
         success = get_incident_manager().resolve_incident(incident_id)
         if not success:
             raise HTTPException(status_code=404, detail="Incident not found")
@@ -254,6 +337,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/", include_in_schema=False)
     async def index() -> FileResponse:
+        """Retrieve the primary glassmorphic Single-Page Application (SPA) dashboard.
+
+        Returns:
+            FileResponse: The raw index.html static asset.
+        """
         return FileResponse(_STATIC_DIR / "index.html")
 
     app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
