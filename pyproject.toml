@@ -2,7 +2,13 @@
 name = "arenaflow-ai"
 version = "0.1.0"
 description = "ArenaFlow AI smart stadium assistant for FIFA 2026"
-dependencies = []
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn>=0.28.0",
+    "pydantic>=2.6.0",
+    "pydantic-settings>=2.2.0",
+    "google-generativeai>=0.4.0",
+]
 
 [tool.ruff]
 line-length = 100
