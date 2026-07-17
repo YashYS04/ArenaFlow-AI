@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-import logging
+from collections.abc import AsyncIterator
 from pathlib import Path
+from typing import Any
+
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
@@ -19,10 +21,10 @@ from app.models.schemas import (
 )
 from app.services import phrasing as phr
 from app.services.context_engine import RouteNotFound, build_decision, run_assist
+from app.services.incidents import get_incident_manager
 from app.services.llm import get_llm_client
 from app.services.security import RateLimiter
 from app.services.stadium_data import Stadium, get_stadium
-from app.services.incidents import get_incident_manager
 
 logger = get_logger("arenaflow")
 
@@ -39,7 +41,7 @@ _SECURITY_HEADERS = {
 }
 
 
-def _stadium_metadata(stadium: Stadium) -> dict:
+def _stadium_metadata(stadium: Stadium) -> dict[str, Any]:
     return {
         "stadium": {
             "name": stadium.name,
@@ -105,14 +107,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
 
     @app.middleware("http")
-    async def add_security_headers(request: Request, call_next):
+    async def add_security_headers(request: Request, call_next: Any) -> Any:
         response = await call_next(request)
         for header, value in _SECURITY_HEADERS.items():
             response.headers.setdefault(header, value)
         return response
 
     @app.exception_handler(RouteNotFound)
-    async def _route_not_found_handler(request: Request, exc: RouteNotFound):
+    async def _route_not_found_handler(request: Request, exc: RouteNotFound) -> JSONResponse:
         return JSONResponse(status_code=404, content={"detail": str(exc)})
 
     @app.get("/health", response_model=HealthResponse, tags=["system"])
@@ -120,7 +122,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return HealthResponse(status="ok")
 
     @app.get("/api/stadium", tags=["data"])
-    async def stadium_metadata(request: Request) -> dict:
+    async def stadium_metadata(request: Request) -> dict[str, Any]:
         return _stadium_metadata(request.app.state.stadium)
 
     @app.post(
@@ -172,7 +174,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             incident_desc=decision.incident_desc,
         )
 
-        async def event_generator():
+        async def event_generator() -> AsyncIterator[str]:
             if not ctx.question:
                 answer = phr.render_answer(phrasing_ctx)
                 res = AssistResponse(
@@ -231,7 +233,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return StreamingResponse(event_generator(), media_type="text/event-stream")
 
     @app.get("/api/incidents", tags=["incidents"])
-    async def list_incidents() -> list:
+    async def list_incidents() -> list[dict[str, Any]]:
         return [
             {
                 "id": inc.id,
@@ -244,7 +246,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         ]
 
     @app.post("/api/incidents/{incident_id}/resolve", tags=["incidents"])
-    async def resolve_incident(incident_id: str) -> dict:
+    async def resolve_incident(incident_id: str) -> dict[str, str]:
         success = get_incident_manager().resolve_incident(incident_id)
         if not success:
             raise HTTPException(status_code=404, detail="Incident not found")

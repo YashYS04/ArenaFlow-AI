@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from abc import ABC, abstractmethod
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 from app.config import Settings
 from app.logging_conf import get_logger
@@ -33,6 +33,8 @@ class LLMClient(ABC):
     @abstractmethod
     async def phrase_stream(self, ctx: PhrasingContext, question: str) -> AsyncIterator[str]:
         """Stream a localized answer grounded in ctx."""
+        if False:  # pragma: no cover
+            yield ""
         raise NotImplementedError  # pragma: no cover
 
 
@@ -57,8 +59,8 @@ class GeminiClient(LLMClient):
     def __init__(self, settings: Settings) -> None:
         import google.generativeai as genai
 
-        genai.configure(api_key=settings.gemini_api_key)
-        self._model = genai.GenerativeModel(settings.gemini_model)
+        genai.configure(api_key=settings.gemini_api_key)  # type: ignore[attr-defined]
+        self._model = genai.GenerativeModel(settings.gemini_model)  # type: ignore[attr-defined]
         self._generation_config = {
             "max_output_tokens": settings.gemini_max_output_tokens,
             "temperature": 0.3,

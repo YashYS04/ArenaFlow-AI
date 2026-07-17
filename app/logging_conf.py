@@ -2,18 +2,14 @@ from __future__ import annotations
 
 import logging
 
-_CONFIGURED = False
-
 
 def configure_logging(level: int = logging.INFO) -> None:
-    global _CONFIGURED
-    if _CONFIGURED:
+    if logging.root.handlers:
         return
     logging.basicConfig(
         level=level,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
-    _CONFIGURED = True
 
 
 def get_logger(name: str) -> logging.Logger:
