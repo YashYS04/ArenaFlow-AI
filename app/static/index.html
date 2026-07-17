@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ArenaFlow — Smart Stadium & Operations AI</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main" data-i18n="skipLink">Skip to main content</a>
+
+  <header class="site-header">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">⚽</span>
+      <div>
+        <h1 id="app-title">ArenaFlow</h1>
+        <p id="app-tagline" class="tagline" data-i18n="tagline">Smart Operations & Wayfinding · FIFA World Cup 2026</p>
+      </div>
+    </div>
+
+    <nav class="toolbar" aria-label="Settings bar">
+      <div class="setting-item">
+        <label for="language" data-i18n="language">Language</label>
+        <select id="language" name="language">
+          <option value="en">English</option>
+          <option value="es">Español</option>
+          <option value="fr">Français</option>
+        </select>
+      </div>
+      <button type="button" id="persona-toggle" class="toggle-btn" aria-pressed="false">
+        <span data-i18n="toggleStaff">Switch to Staff Mode</span>
+      </button>
+      <button type="button" id="tts-toggle" class="toggle-btn" aria-pressed="false">
+        <span data-i18n="toggleSpeech">Voice Guidance Off</span>
+      </button>
+      <button type="button" id="contrast-toggle" class="toggle-btn" aria-pressed="false">
+        <span data-i18n="highVisibility">High-visibility Mode</span>
+      </button>
+    </nav>
+  </header>
+
+  <main id="main" class="layout">
+    <!-- COLUMN 1: Inputs & Operations Controls -->
+    <div class="control-panel">
+      <!-- Fan Mode Card -->
+      <section class="card" id="fan-card" aria-labelledby="fan-heading">
+        <h2 id="fan-heading" data-i18n="yourContext">Your context</h2>
+        <form id="assist-form" novalidate>
+          <div class="field">
+            <label for="current_location" data-i18n="whereNow">Where are you now?</label>
+            <select id="current_location" name="current_location" required></select>
+          </div>
+
+          <div class="field">
+            <label for="destination_intent" data-i18n="whereGo">Where do you want to go?</label>
+            <select id="destination_intent" name="destination_intent" required></select>
+          </div>
+
+          <fieldset class="field">
+            <legend data-i18n="accessNeeds">Accessibility needs</legend>
+            <label class="check">
+              <input type="checkbox" name="need" value="wheelchair" />
+              <span data-i18n="needWheelchair">Wheelchair / step-free</span>
+            </label>
+            <label class="check">
+              <input type="checkbox" name="need" value="visual" />
+              <span data-i18n="needVisual">Low vision / voice assistance</span>
+            </label>
+            <label class="check">
+              <input type="checkbox" name="need" value="hearing" />
+              <span data-i18n="needHearing">Deaf / hard of hearing</span>
+            </label>
+          </fieldset>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="ticket_section" data-i18n="ticketSection">Section (optional)</label>
+              <input type="text" id="ticket_section" name="ticket_section"
+                     maxlength="8" placeholder="e.g. 134" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="minutes_to_kickoff" data-i18n="minutesToKickoff">Minutes to kick-off</label>
+              <input type="number" id="minutes_to_kickoff" name="minutes_to_kickoff"
+                     value="20" min="-120" max="1440" required />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="question" data-i18n="question">Ask a question (optional)</label>
+            <textarea id="question" name="question" rows="2" maxlength="280"
+                      placeholder="e.g. Is there a quieter restroom near me?"></textarea>
+            <p id="question-hint" class="hint" data-i18n="questionHint">
+              Free text is treated strictly as data, never as commands.
+            </p>
+          </div>
+
+          <button type="submit" id="submit-btn" class="primary-btn" data-i18n="getHelp">
+            Get help
+          </button>
+        </form>
+      </section>
+
+      <!-- Staff Operations Card (Visible in Staff Mode only) -->
+      <section class="card staff-only hidden" id="staff-card" aria-labelledby="staff-heading">
+        <h2 id="staff-heading" data-i18n="staffOperations">Staff Operations Panel</h2>
+        <form id="incident-form" novalidate>
+          <div class="field">
+            <label for="incident_location" data-i18n="incidentLocation">Incident Zone</label>
+            <select id="incident_location" name="incident_location" required></select>
+          </div>
+          <div class="field">
+            <label for="incident_type" data-i18n="incidentType">Issue Type</label>
+            <select id="incident_type" name="incident_type" required>
+              <option value="spill" data-i18n="spill">Spill (Block Zone)</option>
+              <option value="congestion" data-i18n="congestion">Congestion (High Delay)</option>
+              <option value="maintenance" data-i18n="maintenance">Maintenance (Block Zone)</option>
+              <option value="medical" data-i18n="medical">Medical emergency (Block Zone)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="incident_description" data-i18n="incidentDesc">Details / Action required</label>
+            <textarea id="incident_description" name="incident_description" rows="2" maxlength="280"
+                      placeholder="e.g. Cola spill on stairs, needs cleaning" required></textarea>
+          </div>
+          <button type="submit" id="report-btn" class="secondary-btn" data-i18n="reportIncident">
+            Log & Route Incident
+          </button>
+        </form>
+
+        <div class="incident-tracker">
+          <h3 data-i18n="activeIncidents">Active Incidents</h3>
+          <div id="incidents-list" class="incidents-list">
+            <p class="muted" data-i18n="noIncidents">No active incidents logged.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- COLUMN 2: Map & AI Guidance Outputs -->
+    <div class="display-panel">
+      <!-- Stadium Map Card -->
+      <section class="card" aria-labelledby="map-heading">
+        <h2 id="map-heading" data-i18n="stadiumMap">Interactive Stadium Map</h2>
+        <div class="map-container">
+          <!-- Inline MetLife Stadium SVG Map -->
+          <svg viewBox="0 0 400 400" id="stadium-svg" class="stadium-svg" aria-label="MetLife Stadium seating and concourse layout map" role="img">
+            <!-- Background grids/connectors -->
+            <g id="svg-edges" class="map-edges"></g>
+
+            <!-- Outer Bowl (Upper Seating) -->
+            <path d="M 200,50 A 150,150 0 1,1 199.9,50 Z" class="zone seating-upper" id="svg-zone-seating_upper" />
+
+            <!-- Middle Ring (Upper Concourse Wings) -->
+            <path d="M 120,90 A 110,110 0 0,1 280,90 L 290,75 A 130,130 0 0,0 110,75 Z" class="zone concourse-upper" id="svg-zone-concourse_upper_e" />
+            <path d="M 280,310 A 110,110 0 0,1 120,310 L 110,325 A 130,130 0 0,0 290,325 Z" class="zone concourse-upper" id="svg-zone-concourse_upper_w" />
+
+            <!-- Lower Ring (Lower Concourse Sectors) -->
+            <path d="M 130,130 A 90,90 0 0,1 270,130 M 270,130 A 90,90 0 0,1 270,270 M 270,270 A 90,90 0 0,1 130,270 M 130,270 A 90,90 0 0,1 130,130" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="20" />
+            
+            <path d="M 200,110 A 90,90 0 0,1 290,200 L 310,200 A 110,110 0 0,0 200,90 Z" class="zone concourse-lower" id="svg-zone-concourse_lower_ne" />
+            <path d="M 290,200 A 90,90 0 0,1 200,290 L 200,310 A 110,110 0 0,0 310,200 Z" class="zone concourse-lower" id="svg-zone-concourse_lower_se" />
+            <path d="M 200,290 A 90,90 0 0,1 110,200 L 90,200 A 110,110 0 0,0 200,310 Z" class="zone concourse-lower" id="svg-zone-concourse_lower_sw" />
+            <path d="M 110,200 A 90,90 0 0,1 200,110 L 200,90 A 110,110 0 0,0 90,200 Z" class="zone concourse-lower" id="svg-zone-concourse_lower_nw" />
+
+            <!-- Seating Lower Bowl -->
+            <path d="M 200,140 A 60,60 0 1,1 199.9,140 Z" class="zone seating-lower" id="svg-zone-seating_lower" />
+
+            <!-- Gate Entry/Exits (Outer points) -->
+            <circle cx="70" cy="330" r="14" class="zone gate" id="svg-zone-gate_a" />
+            <text x="70" y="334" class="gate-label" aria-hidden="true">A</text>
+
+            <circle cx="330" cy="330" r="14" class="zone gate" id="svg-zone-gate_b" />
+            <text x="330" y="334" class="gate-label" aria-hidden="true">B</text>
+
+            <circle cx="330" cy="70" r="14" class="zone gate" id="svg-zone-gate_c" />
+            <text x="330" y="74" class="gate-label" aria-hidden="true">C</text>
+
+            <circle cx="70" cy="70" r="14" class="zone gate" id="svg-zone-gate_d" />
+            <text x="70" y="74" class="gate-label" aria-hidden="true">D</text>
+
+            <!-- Center Pitch Graphic -->
+            <rect x="175" y="180" width="50" height="40" rx="3" fill="#14532d" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" />
+            <line x1="200" y1="180" x2="200" y2="220" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" />
+            <circle cx="200" cy="200" r="8" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" />
+          </svg>
+        </div>
+      </section>
+
+      <!-- AI Response & Guidance Card -->
+      <section class="card" aria-labelledby="answer-heading">
+        <div class="answer-header">
+          <h2 id="answer-heading" data-i18n="assistance">Assistance</h2>
+          <button type="button" id="speak-btn" class="icon-btn hidden" aria-label="Read directions aloud" title="Read directions aloud">🔊</button>
+        </div>
+
+        <div id="result" class="result" aria-live="polite" aria-busy="false">
+          <p id="placeholder" class="muted" data-i18n="placeholder">
+            Fill in your context and select “Get help”. Your AI assistant response will stream here.
+          </p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p id="stadium-meta" class="muted"></p>
+    <p class="muted">
+      <span data-i18n="grounding">Answers are grounded in verified stadium layouts. The AI cannot hallucinate routes.</span>
+    </p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

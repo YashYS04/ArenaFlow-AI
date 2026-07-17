@@ -1,0 +1,56 @@
+{
+  "stadium": {
+    "id": "metlife",
+    "name": "MetLife Stadium",
+    "fifa_name": "New York New Jersey Stadium",
+    "city": "East Rutherford, NJ, USA",
+    "capacity": 82500,
+    "note": "Host of the FIFA World Cup 2026 Final. Zone/facility data is illustrative fixture data."
+  },
+  "zones": [
+    { "id": "gate_a", "type": "gate", "level": "ground",
+      "name": { "en": "Gate A (South-West)", "es": "Puerta A (suroeste)", "fr": "Porte A (sud-ouest)" } },
+    { "id": "gate_b", "type": "gate", "level": "ground",
+      "name": { "en": "Gate B (South-East)", "es": "Puerta B (sureste)", "fr": "Porte B (sud-est)" } },
+    { "id": "gate_c", "type": "gate", "level": "ground",
+      "name": { "en": "Gate C (North-East)", "es": "Puerta C (noreste)", "fr": "Porte C (nord-est)" } },
+    { "id": "gate_d", "type": "gate", "level": "ground",
+      "name": { "en": "Gate D (North-West)", "es": "Puerta D (noroeste)", "fr": "Porte D (nord-ouest)" } },
+    { "id": "concourse_lower_sw", "type": "concourse", "level": "lower",
+      "name": { "en": "Lower Concourse — South-West", "es": "Vestíbulo inferior — suroeste", "fr": "Hall inférieur — sud-ouest" } },
+    { "id": "concourse_lower_se", "type": "concourse", "level": "lower",
+      "name": { "en": "Lower Concourse — South-East", "es": "Vestíbulo inferior — sureste", "fr": "Hall inférieur — sud-est" } },
+    { "id": "concourse_lower_ne", "type": "concourse", "level": "lower",
+      "name": { "en": "Lower Concourse — North-East", "es": "Vestíbulo inferior — noreste", "fr": "Hall inférieur — nord-est" } },
+    { "id": "concourse_lower_nw", "type": "concourse", "level": "lower",
+      "name": { "en": "Lower Concourse — North-West", "es": "Vestíbulo inferior — noroeste", "fr": "Hall inférieur — nord-ouest" } },
+    { "id": "concourse_upper_w", "type": "concourse", "level": "upper",
+      "name": { "en": "Upper Concourse — West", "es": "Vestíbulo superior — oeste", "fr": "Hall supérieur — ouest" } },
+    { "id": "concourse_upper_e", "type": "concourse", "level": "upper",
+      "name": { "en": "Upper Concourse — East", "es": "Vestíbulo superior — este", "fr": "Hall supérieur — est" } },
+    { "id": "seating_lower", "type": "seating", "level": "lower",
+      "name": { "en": "Lower Bowl Seating (100s)", "es": "Gradas inferiores (nivel 100)", "fr": "Tribunes inférieures (niveau 100)" } },
+    { "id": "seating_upper", "type": "seating", "level": "upper",
+      "name": { "en": "Upper Bowl Seating (300s)", "es": "Gradas superiores (nivel 300)", "fr": "Tribunes supérieures (niveau 300)" } }
+  ],
+  "edges": [
+    { "from": "gate_a", "to": "concourse_lower_sw", "means": "walk", "step_free": true, "distance": 40 },
+    { "from": "gate_b", "to": "concourse_lower_se", "means": "walk", "step_free": true, "distance": 40 },
+    { "from": "gate_c", "to": "concourse_lower_ne", "means": "walk", "step_free": true, "distance": 40 },
+    { "from": "gate_d", "to": "concourse_lower_nw", "means": "walk", "step_free": true, "distance": 40 },
+
+    { "from": "concourse_lower_sw", "to": "concourse_lower_se", "means": "walk", "step_free": true, "distance": 60 },
+    { "from": "concourse_lower_se", "to": "concourse_lower_ne", "means": "walk", "step_free": true, "distance": 60 },
+    { "from": "concourse_lower_ne", "to": "concourse_lower_nw", "means": "walk", "step_free": true, "distance": 60 },
+    { "from": "concourse_lower_nw", "to": "concourse_lower_sw", "means": "walk", "step_free": true, "distance": 60 },
+
+    { "from": "concourse_lower_sw", "to": "seating_lower", "means": "ramp", "step_free": true, "distance": 30 },
+
+    { "from": "concourse_lower_sw", "to": "concourse_upper_w", "means": "stairs", "step_free": false, "distance": 50 },
+    { "from": "concourse_lower_ne", "to": "concourse_upper_e", "means": "elevator", "step_free": true, "distance": 55 },
+
+    { "from": "concourse_upper_w", "to": "concourse_upper_e", "means": "walk", "step_free": true, "distance": 80 },
+    { "from": "concourse_upper_w", "to": "seating_upper", "means": "ramp", "step_free": true, "distance": 30 },
+    { "from": "concourse_upper_e", "to": "seating_upper", "means": "walk", "step_free": true, "distance": 35 }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "base": {
+    "gate_a": "medium",
+    "gate_b": "medium",
+    "gate_c": "low",
+    "gate_d": "low",
+    "concourse_lower_sw": "high",
+    "concourse_lower_se": "medium",
+    "concourse_lower_ne": "low",
+    "concourse_lower_nw": "low",
+    "concourse_upper_w": "medium",
+    "concourse_upper_e": "low",
+    "seating_lower": "medium",
+    "seating_upper": "low"
+  },
+  "simulation": {
+    "pre_match_window_minutes": 30,
+    "imminent_window_minutes": 10,
+    "surge_zone_types": ["gate", "concourse"],
+    "in_play_gate_relief": true
+  }
+}
