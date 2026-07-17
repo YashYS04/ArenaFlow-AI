@@ -9,7 +9,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     gemini_api_key: str | None = None
-    gemini_model: str = "gemini-1.5-flash"
+    gemini_model: str = "gemini-2.5-flash"
     gemini_max_output_tokens: int = 256
     allowed_origins: list[str] = ["http://localhost:8000", "http://127.0.0.1:8000"]
     rate_limit_capacity: int = 30
