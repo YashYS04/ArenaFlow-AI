@@ -181,3 +181,9 @@ docker run -p 8080:8080 -e GEMINI_API_KEY=YOUR_KEY arenaflow
     ```bash
     pytest
     ```
+
+---
+
+## 9. License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
