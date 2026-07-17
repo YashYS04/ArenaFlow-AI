@@ -1,3 +1,9 @@
+[project]
+name = "arenaflow-ai"
+version = "0.1.0"
+description = "ArenaFlow AI smart stadium assistant for FIFA 2026"
+dependencies = []
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
