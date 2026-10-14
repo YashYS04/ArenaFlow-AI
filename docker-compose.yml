@@ -1,0 +1,21 @@
+services:
+  arenaflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arenaflow-ai
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
+      - RATE_LIMIT_CAPACITY=30
+      - RATE_LIMIT_REFILL_PER_SEC=0.5
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8080/health\")' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
