@@ -22,6 +22,11 @@ class Incident:
     resolved: bool = False
 
 
+BLOCKING_HAZARD_TYPES: frozenset[str] = frozenset(
+    {"spill", "maintenance", "medical", "security_lockdown", "electrical_fault"}
+)
+
+
 class IncidentManager:
     """Manages active incidents and identifies blocked routing zones in-memory.
 
@@ -56,8 +61,8 @@ class IncidentManager:
     def get_active_blocked_zones(self) -> set[str]:
         """Get the set of zone IDs currently blocked due to active hazards.
 
-        Spills, medical emergencies, and maintenance issues completely block paths.
-        Congestion slows routing but does not block traversal.
+        Spills, medical emergencies, maintenance, electrical faults, and security lockdowns
+        completely block traversal. Congestion slows routing but does not block traversal.
 
         Returns:
             set[str]: Set of blocked zone IDs.
@@ -65,7 +70,7 @@ class IncidentManager:
         return {
             inc.zone_id
             for inc in self._incidents.values()
-            if not inc.resolved and inc.issue_type in {"spill", "maintenance", "medical"}
+            if not inc.resolved and inc.issue_type in BLOCKING_HAZARD_TYPES
         }
 
     def get_all_incidents(self) -> list[Incident]:

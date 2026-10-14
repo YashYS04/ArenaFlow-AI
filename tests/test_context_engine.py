@@ -149,3 +149,24 @@ def test_build_decision_unreachable_restroom_due_to_blocks(base_payload):
     ctx = UserContext(**payload)
     with pytest.raises(RouteNotFound):
         build_decision(ctx, stadium)
+
+
+def test_build_decision_security_lockdown_rerouting(base_payload):
+    stadium = get_stadium()
+    from app.services.incidents import get_incident_manager
+    manager = get_incident_manager()
+
+    # Report security lockdown on concourse_lower_nw
+    manager.report_incident("concourse_lower_nw", "security_lockdown", "Zone security incident")
+    assert "concourse_lower_nw" in manager.get_active_blocked_zones()
+
+    # Route from concourse_lower_sw to a destination in concourse_lower_ne
+    payload = dict(base_payload, current_location="concourse_lower_sw", destination_intent="restroom")
+    ctx = UserContext(**payload)
+    decision = build_decision(ctx, stadium)
+
+    # Ensure none of the traversed steps pass through the locked-down zone
+    traversed_zones = {step.from_zone for step in decision.route_steps} | {
+        step.to_zone for step in decision.route_steps
+    }
+    assert "concourse_lower_nw" not in traversed_zones
