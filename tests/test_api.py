@@ -5,6 +5,40 @@ def test_health_endpoint(client):
     res = client.get("/health")
     assert res.status_code == 200
     assert res.json() == {"status": "ok"}
+    assert "x-request-id" in res.headers
+
+
+def test_readyz_endpoint(client):
+    res = client.get("/readyz")
+    assert res.status_code == 200
+    assert res.json() == {"status": "ready", "stadium_ready": True}
+
+
+def test_readyz_not_ready(make_client):
+    cli = make_client()
+    cli.app.state.stadium = None
+    res = cli.get("/readyz")
+    assert res.status_code == 200
+    assert res.json() == {"status": "not_ready", "stadium_ready": False}
+
+
+def test_metrics_endpoint(client):
+    # Perform a request first to increment counters
+    client.get("/health")
+    res = client.get("/metrics")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["total_requests"] >= 2
+    assert "200" in data["status_codes"]
+    assert data["status_codes"]["200"] >= 1
+    assert data["uptime_seconds"] >= 0.0
+    assert data["active_requests"] >= 1
+
+
+def test_custom_request_id_propagated(client):
+    res = client.get("/health", headers={"X-Request-ID": "test-req-abc-123"})
+    assert res.status_code == 200
+    assert res.headers["x-request-id"] == "test-req-abc-123"
 
 
 def test_stadium_metadata_endpoint(client):

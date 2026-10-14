@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import time
+import uuid
 from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
@@ -17,6 +19,8 @@ from app.models.schemas import (
     DestinationIntent,
     HealthResponse,
     Language,
+    MetricsResponse,
+    ReadyResponse,
     UserContext,
 )
 from app.services import phrasing as phr
@@ -39,6 +43,45 @@ _SECURITY_HEADERS = {
         "connect-src 'self'; base-uri 'none'; frame-ancestors 'none'"
     ),
 }
+
+
+class AppMetrics:
+    """Lightweight in-memory telemetry and metrics tracking."""
+
+    def __init__(self) -> None:
+        """Initialize telemetry counters and baseline timestamp."""
+        self.start_time: float = time.time()
+        self.total_requests: int = 0
+        self.active_requests: int = 0
+        self.status_codes: dict[str, int] = {}
+
+    def record_start(self) -> None:
+        """Increment total and active request counters."""
+        self.total_requests += 1
+        self.active_requests += 1
+
+    def record_end(self, status_code: int) -> None:
+        """Decrement active requests and increment status code counter.
+
+        Args:
+            status_code: HTTP response status code.
+        """
+        self.active_requests = max(0, self.active_requests - 1)
+        code_str = str(status_code)
+        self.status_codes[code_str] = self.status_codes.get(code_str, 0) + 1
+
+    def get_summary(self) -> dict[str, Any]:
+        """Generate point-in-time metrics summary.
+
+        Returns:
+            dict[str, Any]: Uptime and request telemetry counters.
+        """
+        return {
+            "uptime_seconds": round(time.time() - self.start_time, 2),
+            "total_requests": self.total_requests,
+            "active_requests": self.active_requests,
+            "status_codes": dict(self.status_codes),
+        }
 
 
 def _stadium_metadata(stadium: Stadium) -> dict[str, Any]:
@@ -118,6 +161,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.rate_limiter = RateLimiter(
         settings.rate_limit_capacity, settings.rate_limit_refill_per_sec
     )
+    app.state.metrics = AppMetrics()
 
     app.add_middleware(
         CORSMiddleware,
@@ -129,18 +173,39 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.middleware("http")
     async def add_security_headers(request: Request, call_next: Any) -> Any:
-        """Append secure HTTP headers (CSP, XSS, Frame headers) to every response.
+        """Append secure HTTP headers, track request metrics, and emit structured access log.
 
         Args:
             request: The incoming Request.
             call_next: Next request processing middleware handler.
 
         Returns:
-            Any: The updated Response object with security headers appended.
+            Any: The updated Response object with security and request ID headers appended.
         """
+        metrics: AppMetrics = request.app.state.metrics
+        metrics.record_start()
+        request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
+        start_time = time.perf_counter()
+
         response = await call_next(request)
+
         for header, value in _SECURITY_HEADERS.items():
             response.headers.setdefault(header, value)
+        response.headers["X-Request-ID"] = request_id
+
+        duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
+        metrics.record_end(response.status_code)
+
+        logger.info(
+            "HTTP request completed",
+            extra={
+                "request_id": request_id,
+                "status_code": response.status_code,
+                "method": request.method,
+                "path": request.url.path,
+                "duration_ms": duration_ms,
+            },
+        )
         return response
 
     @app.exception_handler(RouteNotFound)
@@ -164,6 +229,35 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             HealthResponse: Aliveness confirmation object.
         """
         return HealthResponse(status="ok")
+
+    @app.get("/readyz", response_model=ReadyResponse, tags=["system"])
+    async def readiness(request: Request) -> ReadyResponse:
+        """Check system readiness and verify stadium data models are loaded.
+
+        Args:
+            request: The incoming Request.
+
+        Returns:
+            ReadyResponse: System readiness confirmation object.
+        """
+        stadium_ready = bool(request.app.state.stadium and request.app.state.stadium.zones)
+        return ReadyResponse(
+            status="ready" if stadium_ready else "not_ready",
+            stadium_ready=stadium_ready,
+        )
+
+    @app.get("/metrics", response_model=MetricsResponse, tags=["system"])
+    async def metrics(request: Request) -> MetricsResponse:
+        """Retrieve operational request metrics and uptime telemetry.
+
+        Args:
+            request: The incoming Request.
+
+        Returns:
+            MetricsResponse: Current request counts, status distributions, and uptime.
+        """
+        summary = request.app.state.metrics.get_summary()
+        return MetricsResponse(**summary)
 
     @app.get("/api/stadium", tags=["data"])
     async def stadium_metadata(request: Request) -> dict[str, Any]:

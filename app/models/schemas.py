@@ -215,3 +215,29 @@ class HealthResponse(BaseModel):
         status: The server status string (e.g. 'ok').
     """
     status: str
+
+
+class ReadyResponse(BaseModel):
+    """Readiness probe response model.
+
+    Attributes:
+        status: The readiness status string (e.g. 'ready').
+        stadium_ready: True if stadium topology data is loaded.
+    """
+    status: str
+    stadium_ready: bool
+
+
+class MetricsResponse(BaseModel):
+    """Application telemetry and request metrics summary model.
+
+    Attributes:
+        uptime_seconds: System uptime in seconds.
+        total_requests: Lifetime total requests processed.
+        active_requests: Concurrently active requests.
+        status_codes: Map of HTTP response codes to count.
+    """
+    uptime_seconds: float
+    total_requests: int
+    active_requests: int
+    status_codes: dict[str, int]
