@@ -80,7 +80,7 @@ ArenaFlow runs out-of-the-box without any environment variables by falling back 
 | Variable | Purpose | Default |
 |----------|---------|---------|
 | `GEMINI_API_KEY` | Live Google Gemini API Key | *(unset, falls back to MockLLM)* |
-| `GEMINI_MODEL` | Gemini model ID | `gemini-1.5-flash` |
+| `GEMINI_MODEL` | Gemini model ID | `gemini-2.5-flash` |
 | `GEMINI_MAX_OUTPUT_TOKENS` | Maximum response length | `256` |
 | `ALLOWED_ORIGINS` | JSON array of CORS origins | `["http://localhost:8000", "http://127.0.0.1:8000"]` |
 | `RATE_LIMIT_CAPACITY` | Token-bucket max request burst capacity | `30` |
@@ -97,8 +97,8 @@ ArenaFlow runs out-of-the-box without any environment variables by falling back 
 ### Installation
 1.  **Clone the repository:**
     ```bash
-    git clone <your-repo-link>
-    cd promtwars
+    git clone https://github.com/YashYS04/ArenaFlow-AI.git
+    cd ArenaFlow-AI
     ```
 2.  **Create a virtual environment:**
     ```bash
@@ -110,15 +110,25 @@ ArenaFlow runs out-of-the-box without any environment variables by falling back 
     ```
 3.  **Install dependencies:**
     ```bash
+    # Reproducible installation using pinned lockfile:
+    pip install -r requirements.lock.txt
+
+    # Or standard installation:
     pip install -r requirements.txt
     ```
 4.  **Create a `.env` file:**
-    Copy `.env.example` to `.env` and fill in your `GEMINI_API_KEY`.
-5.  **Run the local server:**
+    Copy `.env.example` to `.env` and configure your `GEMINI_API_KEY`.
+5.  **Run the test and verification suite:**
+    ```bash
+    ruff check .
+    mypy app
+    pytest --cov=app --cov-report=term-missing --cov-fail-under=70
+    ```
+6.  **Run the local server:**
     ```bash
     uvicorn app.main:app --reload
     ```
-    Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in your web browser. Interactive API documentation is available at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
+    Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in your web browser. Interactive API documentation is available at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs). Observability metrics and health probes are exposed at `/metrics`, `/health`, and `/readyz`.
 
 ---
 
