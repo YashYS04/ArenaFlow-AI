@@ -230,20 +230,45 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         """
         return HealthResponse(status="ok")
 
-    @app.get("/readyz", response_model=ReadyResponse, tags=["system"])
-    async def readiness(request: Request) -> ReadyResponse:
-        """Check system readiness and verify stadium data models are loaded.
+    @app.get(
+        "/readyz",
+        response_model=ReadyResponse,
+        tags=["system"],
+        responses={200: {"model": ReadyResponse}, 503: {"model": ReadyResponse}},
+    )
+    async def readiness(request: Request) -> JSONResponse:
+        """Check system readiness and verify stadium data models and LLM client are loaded.
 
         Args:
             request: The incoming Request.
 
         Returns:
-            ReadyResponse: System readiness confirmation object.
+            JSONResponse: System readiness confirmation object (200 when ready, 503 when unready).
         """
-        stadium_ready = bool(request.app.state.stadium and request.app.state.stadium.zones)
-        return ReadyResponse(
-            status="ready" if stadium_ready else "not_ready",
-            stadium_ready=stadium_ready,
+        stadium_ready = bool(
+            hasattr(request.app.state, "stadium")
+            and request.app.state.stadium
+            and request.app.state.stadium.zones
+        )
+        llm_ready = bool(
+            hasattr(request.app.state, "llm") and request.app.state.llm is not None
+        )
+        if not (stadium_ready and llm_ready):
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "status": "not_ready",
+                    "stadium_ready": stadium_ready,
+                    "llm_ready": llm_ready,
+                },
+            )
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "ready",
+                "stadium_ready": True,
+                "llm_ready": True,
+            },
         )
 
     @app.get("/metrics", response_model=MetricsResponse, tags=["system"])

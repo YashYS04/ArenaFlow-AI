@@ -223,9 +223,11 @@ class ReadyResponse(BaseModel):
     Attributes:
         status: The readiness status string (e.g. 'ready').
         stadium_ready: True if stadium topology data is loaded.
+        llm_ready: True if LLM service client is initialized.
     """
     status: str
     stadium_ready: bool
+    llm_ready: bool = True
 
 
 class MetricsResponse(BaseModel):

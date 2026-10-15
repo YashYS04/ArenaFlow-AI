@@ -11,15 +11,23 @@ def test_health_endpoint(client):
 def test_readyz_endpoint(client):
     res = client.get("/readyz")
     assert res.status_code == 200
-    assert res.json() == {"status": "ready", "stadium_ready": True}
+    assert res.json() == {"status": "ready", "stadium_ready": True, "llm_ready": True}
 
 
-def test_readyz_not_ready(make_client):
+def test_readyz_not_ready_stadium(make_client):
     cli = make_client()
     cli.app.state.stadium = None
     res = cli.get("/readyz")
-    assert res.status_code == 200
-    assert res.json() == {"status": "not_ready", "stadium_ready": False}
+    assert res.status_code == 503
+    assert res.json() == {"status": "not_ready", "stadium_ready": False, "llm_ready": True}
+
+
+def test_readyz_not_ready_llm(make_client):
+    cli = make_client()
+    cli.app.state.llm = None
+    res = cli.get("/readyz")
+    assert res.status_code == 503
+    assert res.json() == {"status": "not_ready", "stadium_ready": True, "llm_ready": False}
 
 
 def test_metrics_endpoint(client):
