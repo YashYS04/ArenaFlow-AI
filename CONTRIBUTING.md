@@ -118,3 +118,12 @@ pip-audit -r requirements.txt
    * Pytest suite execution and test coverage thresholds.
    * Dependency vulnerability audits via `pip-audit`.
 5. Once all CI checks are green and code review is approved, your PR will be merged.
+
+---
+
+## 6. Contributor & Reviewer Checklist
+
+To maintain code minerability and high engineering standards:
+* **Feature + Test Pairing:** Every change in `app/` MUST be paired with its tests in `tests/` within the same commit.
+* **No Large Mixed Commits:** Keep commits small, isolated, and focused on a single logical change.
+* **Release Tagging:** Maintain semantic release tags (`v1.0.0`, `v1.1.0`) when cutting milestone versions.
