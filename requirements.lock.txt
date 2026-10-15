@@ -164,7 +164,7 @@ pytest-asyncio==1.4.0
     # via -r requirements.txt
 pytest-cov==7.1.0
     # via -r requirements.txt
-python-dotenv==1.0.0
+python-dotenv==1.2.4
     # via
     #   pydantic-settings
     #   uvicorn
