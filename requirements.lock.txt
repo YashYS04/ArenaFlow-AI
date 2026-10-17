@@ -67,7 +67,7 @@ googleapis-common-protos==1.73.0
     # via
     #   google-api-core
     #   grpcio-status
-grpcio==1.78.0
+grpcio==1.84.0
     # via
     #   google-api-core
     #   grpcio-status
