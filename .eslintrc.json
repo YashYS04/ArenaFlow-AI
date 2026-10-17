@@ -1,0 +1,25 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true
+  },
+  "extends": "eslint:recommended",
+  "parserOptions": {
+    "ecmaVersion": 2021,
+    "sourceType": "script"
+  },
+  "rules": {
+    "no-unused-vars": "warn",
+    "no-console": "off",
+    "semi": ["error", "always"],
+    "quotes": ["error", "double", { "allowTemplateLiterals": true }]
+  },
+  "globals": {
+    "I18N": "readonly",
+    "ZONE_COORDS": "readonly",
+    "drawStadiumEdges": "readonly",
+    "clearRouteHighlights": "readonly",
+    "highlightRouteSteps": "readonly",
+    "setupMapInteraction": "readonly"
+  }
+}

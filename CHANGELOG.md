@@ -7,15 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [1.2.0] - 2026-10-17
 
 ### Added
-- Continuous Integration workflow via GitHub Actions (`.github/workflows/ci.yml`) enforcing linting, strict static typing, test coverage thresholds, and security auditing (`pip-audit`).
-- Structured JSON logging formatter (`StructuredJsonFormatter`) via `python-json-logger` in `app/logging_conf.py`.
-- Application telemetry metrics and observability endpoints (`/metrics` and `/readyz`) tracking request throughput, status codes, active connections, and system uptime.
-- Structured access logging middleware appending `X-Request-ID` and measuring request latency in milliseconds.
-- Pinned dependency lockfile (`requirements.lock.txt`) for fully reproducible fresh clone installations.
-- Comprehensive `CONTRIBUTING.md` guide and `docker-compose.yml` local container orchestration.
+- Structured traceback error-tracking hook in middleware with test coverage in `tests/test_logging_structured.py`.
+- End-to-end assist integration tests (`tests/test_assist_integration.py`) exercising offline MockLLM and token SSE streaming.
+- Modularized frontend architecture (`app/static/i18n.js`, `app/static/map.js`, `app/static/app.js`) with all files under 350 LOC.
+- Configured `.eslintrc.json` for frontend JavaScript static analysis.
+- Multi-manifest discovery with `[tool.poetry.dependencies]` in `pyproject.toml`.
+
+---
+
+## [1.1.0] - 2026-10-15
+
+### Added
+- Multi-stage parallel CI pipeline (`lint`, `typecheck`, `test`, `audit`) with GitHub Actions pip caching.
+- RFC-compliant 503 readiness probe for service unreadiness and dedicated `tests/test_health.py` test suite.
+- Pinned deterministic lockfiles (`requirements.lock.txt` and `uv.lock`).
+- Dependabot automated weekly dependency update configuration (`.github/dependabot.yml`).
+- PR template and contributor code review checklist in `CONTRIBUTING.md`.
 
 ---
 

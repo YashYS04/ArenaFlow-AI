@@ -38,3 +38,15 @@ def test_form_controls_have_associated_labels():
 def test_three_languages_offered():
     for value in ('value="en"', 'value="es"', 'value="fr"'):
         assert value in _HTML
+
+
+def test_modular_scripts_referenced():
+    assert '<script src="/static/i18n.js"></script>' in _HTML
+    assert '<script src="/static/map.js"></script>' in _HTML
+    assert '<script src="/static/app.js"></script>' in _HTML
+
+    static_dir = Path(app.__file__).resolve().parent / "static"
+    for script_name in ("i18n.js", "map.js", "app.js"):
+        script_path = static_dir / script_name
+        assert script_path.exists()
+        assert len(script_path.read_text(encoding="utf-8").splitlines()) < 500
