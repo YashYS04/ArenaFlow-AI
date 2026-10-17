@@ -43,7 +43,7 @@ fastapi==0.111.0
     # via -r requirements.txt
 fastapi-cli==0.0.32
     # via fastapi
-google-ai-generativelanguage==0.6.15
+google-ai-generativelanguage==0.12.1
     # via google-generativeai
 google-api-core==2.25.2
     # via
