@@ -182,7 +182,7 @@ rich==15.0.0
     #   typer
 rich-toolkit==0.20.6
     # via fastapi-cli
-ruff==0.15.22
+ruff==0.17.0
     # via -r requirements.txt
 shellingham==1.5.4
     # via typer
