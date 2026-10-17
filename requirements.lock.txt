@@ -212,7 +212,7 @@ ujson==6.0.0
     # via fastapi
 uritemplate==4.2.0
     # via google-api-python-client
-urllib3==2.6.3
+urllib3==2.8.0
     # via
     #   requests
     #   types-requests
