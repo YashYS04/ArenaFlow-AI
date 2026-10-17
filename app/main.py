@@ -187,7 +187,28 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
         start_time = time.perf_counter()
 
-        response = await call_next(request)
+        try:
+            response = await call_next(request)
+        except Exception as exc:
+            duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
+            metrics.record_end(500)
+            logger.error(
+                "Unhandled application exception during request: %s",
+                str(exc),
+                exc_info=True,
+                extra={
+                    "request_id": request_id,
+                    "status_code": 500,
+                    "method": request.method,
+                    "path": request.url.path,
+                    "duration_ms": duration_ms,
+                    "error_type": exc.__class__.__name__,
+                },
+            )
+            response = JSONResponse(
+                status_code=500,
+                content={"detail": "Internal Server Error", "request_id": request_id},
+            )
 
         for header, value in _SECURITY_HEADERS.items():
             response.headers.setdefault(header, value)
@@ -219,7 +240,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         Returns:
             JSONResponse: Localized error message response.
         """
+        request_id = request.headers.get("X-Request-ID") or "unknown"
+        logger.warning(
+            "Route lookup failed: %s",
+            str(exc),
+            extra={
+                "request_id": request_id,
+                "status_code": 404,
+                "path": request.url.path,
+                "method": request.method,
+            },
+        )
         return JSONResponse(status_code=404, content={"detail": str(exc)})
+
 
     @app.get("/health", response_model=HealthResponse, tags=["system"])
     async def health() -> HealthResponse:
