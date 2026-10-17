@@ -109,12 +109,16 @@ ArenaFlow runs out-of-the-box without any environment variables by falling back 
     source .venv/bin/activate
     ```
 3.  **Install dependencies:**
+    *   **Production Source of Truth:** `requirements.lock.txt` is the frozen, fully pinned lockfile ensuring 100% reproducible builds across all environments.
+    *   **Deterministic Resolver:** `uv.lock` is maintained at the repository root alongside `pyproject.toml` for standard lockfile compliance.
+    *   **Direct Runtime Manifest:** `pyproject.toml` and `requirements.txt` declare direct runtime dependencies (`fastapi`, `uvicorn`, `pydantic`, `google-generativeai`, `python-json-logger`).
+
     ```bash
-    # Reproducible installation using pinned lockfile:
+    # Pinned reproducible installation (recommended):
     pip install -r requirements.lock.txt
 
-    # Or standard installation:
-    pip install -r requirements.txt
+    # Or with uv:
+    uv pip install -r requirements.lock.txt
     ```
 4.  **Create a `.env` file:**
     Copy `.env.example` to `.env` and configure your `GEMINI_API_KEY`.

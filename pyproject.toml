@@ -12,6 +12,21 @@ dependencies = [
     "python-json-logger>=2.0.7",
 ]
 
+[tool.poetry]
+name = "arenaflow-ai"
+version = "0.1.0"
+description = "ArenaFlow AI smart stadium assistant for FIFA 2026"
+authors = ["YashYS04"]
+
+[tool.poetry.dependencies]
+python = ">=3.11"
+fastapi = ">=0.110.0"
+uvicorn = ">=0.28.0"
+pydantic = ">=2.6.0"
+pydantic-settings = ">=2.2.0"
+google-generativeai = ">=0.4.0"
+python-json-logger = ">=2.0.7"
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
