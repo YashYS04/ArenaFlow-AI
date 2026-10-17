@@ -194,7 +194,7 @@ typer==0.27.3
     # via fastapi-cli
 types-requests==2.33.0.20260712
     # via -r requirements.txt
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   fastapi
     #   google-generativeai
